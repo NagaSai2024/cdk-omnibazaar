@@ -8,19 +8,26 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "migrate": "ts-node scripts/migrateToDynamo.ts"
   },
   "devDependencies": {
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
+    "@types/pg": "^8.16.0",
+    "aws-cdk": "2.1105.0",
     "jest": "^30",
     "ts-jest": "^29",
-    "aws-cdk": "2.1105.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.237.1",
-    "constructs": "^10.0.0"
+    "@aws-cdk/aws-lambda-nodejs": "^1.203.0",
+    "@aws-sdk/client-dynamodb": "^3.989.0",
+    "@aws-sdk/lib-dynamodb": "^3.989.0",
+    "aws-cdk-lib": "^2.238.0",
+    "constructs": "^10.4.5",
+    "esbuild": "^0.27.3",
+    "pg": "^8.18.0"
   }
 }
