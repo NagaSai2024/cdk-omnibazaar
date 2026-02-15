@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -32,6 +32,48 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     "Access-Control-Allow-Headers": "*",
                 },
                 body: JSON.stringify(data.Items),
+            };
+        }
+
+        if (path.startsWith("/home/category/")) {
+
+            const category = path.split("/home/category/")[1].toLowerCase();
+
+            const data = await docClient.send(
+                new ScanCommand({
+                    TableName: process.env.TABLE_NAME,
+                    FilterExpression: "attribute_exists(categories)",
+                })
+            );
+
+            const filtered = data.Items?.filter((item: any) => {
+                if (!item.categories) return false;
+
+                return item.categories.some((cat: string) =>
+                    cat.toLowerCase().includes(category)
+                );
+            }).slice(0, 4);
+
+            const formatted = filtered?.map((item: any) => {
+                let subtitle = "Special Offer";
+
+                if (item.discount_percent && Number(item.discount_percent) >= 30) {
+                    subtitle = "Min. 30% Off";
+                } else if (item.root_bs_rank && item.root_bs_rank <= 300) {
+                    subtitle = "Top Picks";
+                }
+
+                return {
+                    id: Number(item.id),
+                    title: item.title,
+                    image_url: item.image_url,
+                    subtitle,
+                };
+            });
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify(formatted),
             };
         }
 

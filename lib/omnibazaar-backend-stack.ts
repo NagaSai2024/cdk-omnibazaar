@@ -47,11 +47,6 @@ export class OmnibazaarBackendStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    new s3deploy.BucketDeployment(this, 'DeployAngular', {
-      sources: [s3deploy.Source.asset('../omnibazaar-frontend/dist/omnibazaar-frontend/browser')],
-      destinationBucket: websiteBucket,
-    });
-
     const apiLamdda = new lambdaNode.NodejsFunction(this, 'ApiLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, '../lambda/index.ts'),
@@ -67,6 +62,27 @@ export class OmnibazaarBackendStack extends cdk.Stack {
 
     table.grantReadWriteData(apiLamdda);
 
+    const api = new apigateway.LambdaRestApi(this, 'ApiGateway', {
+      handler: apiLamdda,
+      proxy: true,
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+      },
+    });
+
+    new s3deploy.BucketDeployment(this, 'DeployAngular', {
+      sources: [s3deploy.Source.asset('../omnibazaar-frontend/dist/omnibazaar-frontend/browser'),
+      s3deploy.Source.data('assets/config.json',JSON.stringify({
+          apiUrl: api.url
+        })
+      )
+      ],
+
+      destinationBucket: websiteBucket,
+    });
+
     new cdk.CfnOutput(this, 'ProductsTableName', {
       value: table.tableName,
       exportName: 'ProductsTableName',
@@ -75,15 +91,5 @@ export class OmnibazaarBackendStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FrontendURL', {
       value: websiteBucket.bucketWebsiteUrl,
     });
-
-    new apigateway.LambdaRestApi(this, 'ApiGateway', {
-      handler: apiLamdda,
-      proxy: true,
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
-      },
-    })
   }
 }
