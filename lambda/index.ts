@@ -7,13 +7,9 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler: APIGatewayProxyHandler = async (event) => {
     try {
-
         const path = event.path;
-        console.log("Incoming path:", path);
-
 
         if (path === '/home/top-deals') {
-
             const data = await docClient.send(
                 new QueryCommand({
                     TableName: process.env.TABLE_NAME,
@@ -24,25 +20,30 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     },
                     Limit: 10,
                     ScanIndexForward: true,
+                    ProjectionExpression:
+                        "id, root_bs_rank, title, image_url, final_price",
                 })
             );
 
             return {
                 statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "*",
+                },
                 body: JSON.stringify(data.Items),
             };
         }
 
         return {
             statusCode: 404,
-            body: JSON.stringify({ message: "Not FOund" }),
+            body: JSON.stringify({ message: "Not Found" }),
         };
-
     } catch (error) {
-        console.error("ERROR:", JSON.stringify(error))
+        console.error(error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: "Can't fetch datra" }),
+            body: JSON.stringify({ message: "Server Error" }),
         };
     }
 };
